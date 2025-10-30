@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { Advertiser, Campaign } from '../types';
-import { advertiserService } from '../services/advertiserService';
+import { useState, useEffect } from "react";
+import type { Advertiser, Campaign } from "../types";
+import { advertiserService } from "../services/advertiserService";
 
 export default function AdvertiserProfile() {
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null);
@@ -17,21 +17,21 @@ export default function AdvertiserProfile() {
     try {
       setLoading(true);
       // Replace with actual advertiser ID from auth context
-      const advertiserId = 'current-advertiser-id';
-      
+      const advertiserId = "current-advertiser-id";
+
       const [advertiserResponse, campaignsResponse] = await Promise.all([
         advertiserService.getAdvertiserProfile(advertiserId),
-        advertiserService.getAdvertiserCampaigns(advertiserId)
+        advertiserService.getAdvertiserCampaigns(advertiserId),
       ]);
 
-      if (advertiserResponse.status === 'success' && advertiserResponse.data) {
+      if (advertiserResponse.status === "success" && advertiserResponse.data) {
         setAdvertiser(advertiserResponse.data);
       }
-      if (campaignsResponse.status === 'success' && campaignsResponse.data) {
+      if (campaignsResponse.status === "success" && campaignsResponse.data) {
         setCampaigns(campaignsResponse.data);
       }
     } catch (error) {
-      console.error('Error fetching advertiser data:', error);
+      console.error("Error fetching advertiser data:", error);
     } finally {
       setLoading(false);
     }
@@ -42,26 +42,29 @@ export default function AdvertiserProfile() {
     if (!advertiser) return;
 
     try {
-      const response = await advertiserService.updateAdvertiserProfile(advertiser.advertiserId, advertiser);
-      if (response.status === 'success') {
+      const response = await advertiserService.updateAdvertiserProfile(
+        advertiser.advertiserId,
+        advertiser
+      );
+      if (response.status === "success") {
         setIsEditing(false);
-        alert('Profile updated successfully!');
+        alert("Profile updated successfully!");
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      console.error("Error updating profile:", error);
+      alert("Failed to update profile");
     }
   };
 
   const getStatusColor = (status: string) => {
     const colors = {
-      draft: 'bg-gray-100 text-gray-800',
-      active: 'bg-green-100 text-green-800',
-      paused: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-blue-100 text-blue-800',
-      cancelled: 'bg-red-100 text-red-800',
+      draft: "bg-gray-100 text-gray-800",
+      active: "bg-green-100 text-green-800",
+      paused: "bg-yellow-100 text-yellow-800",
+      completed: "bg-blue-100 text-blue-800",
+      cancelled: "bg-red-100 text-red-800",
     };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
   if (loading) {
@@ -92,7 +95,7 @@ export default function AdvertiserProfile() {
             onClick={() => setIsEditing(!isEditing)}
             className="btn-primary"
           >
-            {isEditing ? 'Cancel' : 'Edit Profile'}
+            {isEditing ? "Cancel" : "Edit Profile"}
           </button>
         </div>
 
@@ -105,7 +108,9 @@ export default function AdvertiserProfile() {
               <input
                 type="text"
                 value={advertiser.companyName}
-                onChange={(e) => setAdvertiser({ ...advertiser, companyName: e.target.value })}
+                onChange={(e) =>
+                  setAdvertiser({ ...advertiser, companyName: e.target.value })
+                }
                 disabled={!isEditing}
                 className="input-field"
               />
@@ -117,8 +122,13 @@ export default function AdvertiserProfile() {
               </label>
               <input
                 type="text"
-                value={advertiser.contactPerson || ''}
-                onChange={(e) => setAdvertiser({ ...advertiser, contactPerson: e.target.value })}
+                value={advertiser.contactPerson || ""}
+                onChange={(e) =>
+                  setAdvertiser({
+                    ...advertiser,
+                    contactPerson: e.target.value,
+                  })
+                }
                 disabled={!isEditing}
                 className="input-field"
               />
@@ -130,8 +140,10 @@ export default function AdvertiserProfile() {
               </label>
               <input
                 type="tel"
-                value={advertiser.phoneNumber || ''}
-                onChange={(e) => setAdvertiser({ ...advertiser, phoneNumber: e.target.value })}
+                value={advertiser.phoneNumber || ""}
+                onChange={(e) =>
+                  setAdvertiser({ ...advertiser, phoneNumber: e.target.value })
+                }
                 disabled={!isEditing}
                 className="input-field"
               />
@@ -143,8 +155,13 @@ export default function AdvertiserProfile() {
               </label>
               <input
                 type="text"
-                value={advertiser.businessAddress || ''}
-                onChange={(e) => setAdvertiser({ ...advertiser, businessAddress: e.target.value })}
+                value={advertiser.businessAddress || ""}
+                onChange={(e) =>
+                  setAdvertiser({
+                    ...advertiser,
+                    businessAddress: e.target.value,
+                  })
+                }
                 disabled={!isEditing}
                 className="input-field"
               />
@@ -156,8 +173,10 @@ export default function AdvertiserProfile() {
               </label>
               <input
                 type="text"
-                value={advertiser.city || ''}
-                onChange={(e) => setAdvertiser({ ...advertiser, city: e.target.value })}
+                value={advertiser.city || ""}
+                onChange={(e) =>
+                  setAdvertiser({ ...advertiser, city: e.target.value })
+                }
                 disabled={!isEditing}
                 className="input-field"
               />
@@ -169,8 +188,10 @@ export default function AdvertiserProfile() {
               </label>
               <input
                 type="text"
-                value={advertiser.industry || ''}
-                onChange={(e) => setAdvertiser({ ...advertiser, industry: e.target.value })}
+                value={advertiser.industry || ""}
+                onChange={(e) =>
+                  setAdvertiser({ ...advertiser, industry: e.target.value })
+                }
                 disabled={!isEditing}
                 className="input-field"
               />
@@ -178,8 +199,16 @@ export default function AdvertiserProfile() {
           </div>
 
           <div className="mt-6">
-            <span className={`px-3 py-1 rounded-full text-sm ${advertiser.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-              {advertiser.isVerified ? 'Verified Business' : 'Pending Verification'}
+            <span
+              className={`px-3 py-1 rounded-full text-sm ${
+                advertiser.isVerified
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {advertiser.isVerified
+                ? "Verified Business"
+                : "Pending Verification"}
             </span>
           </div>
 
@@ -207,7 +236,8 @@ export default function AdvertiserProfile() {
 
         {campaigns.length === 0 ? (
           <p className="text-gray-500 text-center py-8">
-            No campaigns yet. Create your first campaign to start connecting with drivers!
+            No campaigns yet. Create your first campaign to start connecting
+            with drivers!
           </p>
         ) : (
           <div className="space-y-4">
@@ -218,10 +248,16 @@ export default function AdvertiserProfile() {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">{campaign.campaignName}</h3>
+                    <h3 className="text-xl font-semibold mb-2">
+                      {campaign.campaignName}
+                    </h3>
                     <p className="text-gray-600 mb-3">{campaign.description}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(campaign.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                      campaign.status
+                    )}`}
+                  >
                     {campaign.status}
                   </span>
                 </div>
@@ -264,7 +300,7 @@ export default function AdvertiserProfile() {
                 <div className="mt-4 flex gap-2">
                   <button className="btn-primary text-sm">View Details</button>
                   <button className="btn-secondary text-sm">Edit</button>
-                  {campaign.status === 'active' && (
+                  {campaign.status === "active" && (
                     <button className="text-yellow-600 hover:bg-yellow-50 px-4 py-2 rounded-lg text-sm">
                       Pause
                     </button>
