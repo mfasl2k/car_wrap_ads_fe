@@ -2,30 +2,31 @@ import apiClient from "./api";
 import type { Advertiser, ApiResponse, Campaign } from "../types";
 
 export const advertiserService = {
-  // Get advertiser profile
-  getAdvertiserProfile: async (
-    advertiserId: string
+  // Get current advertiser profile (authenticated user)
+  getAdvertiserProfile: async (): Promise<ApiResponse<Advertiser>> => {
+    const response = await apiClient.get("/advertisers/me");
+    return response.data;
+  },
+
+  // Create advertiser profile
+  createAdvertiserProfile: async (
+    data: Partial<Advertiser>
   ): Promise<ApiResponse<Advertiser>> => {
-    const response = await apiClient.get(`/advertisers/${advertiserId}`);
+    const response = await apiClient.post("/advertisers", data);
     return response.data;
   },
 
   // Update advertiser profile
   updateAdvertiserProfile: async (
-    advertiserId: string,
     data: Partial<Advertiser>
   ): Promise<ApiResponse<Advertiser>> => {
-    const response = await apiClient.put(`/advertisers/${advertiserId}`, data);
+    const response = await apiClient.put("/advertisers/me", data);
     return response.data;
   },
 
   // Get advertiser campaigns
-  getAdvertiserCampaigns: async (
-    advertiserId: string
-  ): Promise<ApiResponse<Campaign[]>> => {
-    const response = await apiClient.get(
-      `/advertisers/${advertiserId}/campaigns`
-    );
+  getAdvertiserCampaigns: async (): Promise<ApiResponse<Campaign[]>> => {
+    const response = await apiClient.get("/advertisers/me/campaigns");
     return response.data;
   },
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { Advertiser, Campaign } from "../types";
-import { advertiserService } from "../services/advertiserService";
+import type { Advertiser, Campaign } from "../../types";
+import { advertiserService } from "../../services/advertiserService";
 
 export default function AdvertiserProfile() {
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null);
@@ -10,18 +10,22 @@ export default function AdvertiserProfile() {
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
 
   useEffect(() => {
-    fetchAdvertiserData();
+    // Check if user is logged in
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      fetchAdvertiserData();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const fetchAdvertiserData = async () => {
     try {
       setLoading(true);
-      // Replace with actual advertiser ID from auth context
-      const advertiserId = "current-advertiser-id";
 
       const [advertiserResponse, campaignsResponse] = await Promise.all([
-        advertiserService.getAdvertiserProfile(advertiserId),
-        advertiserService.getAdvertiserCampaigns(advertiserId),
+        advertiserService.getAdvertiserProfile(),
+        advertiserService.getAdvertiserCampaigns(),
       ]);
 
       if (advertiserResponse.status === "success" && advertiserResponse.data) {
@@ -43,7 +47,6 @@ export default function AdvertiserProfile() {
 
     try {
       const response = await advertiserService.updateAdvertiserProfile(
-        advertiser.advertiserId,
         advertiser
       );
       if (response.status === "success") {
@@ -77,8 +80,27 @@ export default function AdvertiserProfile() {
 
   if (!advertiser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-red-600">Advertiser profile not found</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="card max-w-md text-center">
+          <div className="text-6xl mb-4">📢</div>
+          <h2 className="text-2xl font-bold mb-4">Advertiser Profile</h2>
+          <p className="text-gray-600 mb-6">
+            Please complete your advertiser profile to start creating car wrap
+            advertising campaigns.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Note: This page will connect to your backend API once you've
+            registered and logged in.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <a href="/login" className="btn-primary">
+              Login
+            </a>
+            <a href="/register" className="btn-secondary">
+              Register
+            </a>
+          </div>
+        </div>
       </div>
     );
   }

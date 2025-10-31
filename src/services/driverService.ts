@@ -2,38 +2,39 @@ import apiClient from "./api";
 import type { Driver, ApiResponse, Vehicle } from "../types";
 
 export const driverService = {
-  // Get driver profile
-  getDriverProfile: async (driverId: string): Promise<ApiResponse<Driver>> => {
-    const response = await apiClient.get(`/drivers/${driverId}`);
+  // Get current driver profile (authenticated user)
+  getDriverProfile: async (): Promise<ApiResponse<Driver>> => {
+    const response = await apiClient.get("/drivers/me");
+    return response.data;
+  },
+
+  // Create driver profile
+  createDriverProfile: async (
+    data: Partial<Driver>
+  ): Promise<ApiResponse<Driver>> => {
+    const response = await apiClient.post("/drivers", data);
     return response.data;
   },
 
   // Update driver profile
   updateDriverProfile: async (
-    driverId: string,
     data: Partial<Driver>
   ): Promise<ApiResponse<Driver>> => {
-    const response = await apiClient.put(`/drivers/${driverId}`, data);
+    const response = await apiClient.put("/drivers/me", data);
     return response.data;
   },
 
   // Get driver vehicles
-  getDriverVehicles: async (
-    driverId: string
-  ): Promise<ApiResponse<Vehicle[]>> => {
-    const response = await apiClient.get(`/drivers/${driverId}/vehicles`);
+  getDriverVehicles: async (): Promise<ApiResponse<Vehicle[]>> => {
+    const response = await apiClient.get("/vehicles/my");
     return response.data;
   },
 
   // Add vehicle
   addVehicle: async (
-    driverId: string,
     vehicleData: Partial<Vehicle>
   ): Promise<ApiResponse<Vehicle>> => {
-    const response = await apiClient.post(
-      `/drivers/${driverId}/vehicles`,
-      vehicleData
-    );
+    const response = await apiClient.post("/vehicles", vehicleData);
     return response.data;
   },
 
