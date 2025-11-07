@@ -94,11 +94,9 @@ export default function AdvertiserDashboard() {
                   </div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-sm text-blue-600 font-medium">
-                    Website
-                  </div>
+                  <div className="text-sm text-blue-600 font-medium">City</div>
                   <div className="text-sm font-bold text-blue-700 truncate">
-                    🌐 {advertiser.website || "Not set"}
+                    📍 {advertiser.city || "Not set"}
                   </div>
                 </div>
               </div>
@@ -115,14 +113,20 @@ export default function AdvertiserDashboard() {
             <div className="card">
               <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left">
+                <button
+                  onClick={() => navigate("/advertiser/campaigns/create")}
+                  className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left"
+                >
                   <div className="text-2xl mb-2">🎯</div>
                   <div className="font-semibold">Create Campaign</div>
                   <div className="text-sm text-gray-600">
                     Launch a new ad campaign
                   </div>
                 </button>
-                <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left">
+                <button
+                  onClick={() => navigate("/advertiser/campaigns")}
+                  className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left"
+                >
                   <div className="text-2xl mb-2">📊</div>
                   <div className="font-semibold">View Campaigns</div>
                   <div className="text-sm text-gray-600">

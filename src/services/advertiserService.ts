@@ -26,7 +26,7 @@ export const advertiserService = {
 
   // Get advertiser campaigns
   getAdvertiserCampaigns: async (): Promise<ApiResponse<Campaign[]>> => {
-    const response = await apiClient.get("/advertisers/me/campaigns");
+    const response = await apiClient.get("/campaigns/my");
     return response.data;
   },
 
@@ -47,6 +47,17 @@ export const advertiserService = {
       `/campaigns/${campaignId}`,
       campaignData
     );
+    return response.data;
+  },
+
+  // Update campaign status
+  updateCampaignStatus: async (
+    campaignId: string,
+    status: string
+  ): Promise<ApiResponse<Campaign>> => {
+    const response = await apiClient.patch(`/campaigns/${campaignId}/status`, {
+      status,
+    });
     return response.data;
   },
 

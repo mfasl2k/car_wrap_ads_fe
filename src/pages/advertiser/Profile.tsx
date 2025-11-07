@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import type { Advertiser, Campaign } from "../../types";
+import { useNavigate } from "react-router-dom";
+import type { Advertiser } from "../../types";
 import { advertiserService } from "../../services/advertiserService";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function AdvertiserProfile() {
+  const navigate = useNavigate();
+  const toast = useToast();
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showCreateCampaign, setShowCreateCampaign] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
@@ -23,51 +27,83 @@ export default function AdvertiserProfile() {
     try {
       setLoading(true);
 
-      const [advertiserResponse, campaignsResponse] = await Promise.all([
-        advertiserService.getAdvertiserProfile(),
-        advertiserService.getAdvertiserCampaigns(),
-      ]);
+      const advertiserResponse = await advertiserService.getAdvertiserProfile();
 
       if (advertiserResponse.status === "success" && advertiserResponse.data) {
-        setAdvertiser(advertiserResponse.data);
+        // Handle both nested and direct response structure
+        const advertiserData =
+          (advertiserResponse.data as any).advertiser ||
+          advertiserResponse.data;
+        setAdvertiser(advertiserData);
+        setProfileExists(true);
+        setIsCreating(false);
       }
-      if (campaignsResponse.status === "success" && campaignsResponse.data) {
-        setCampaigns(campaignsResponse.data);
-      }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching advertiser data:", error);
+      // Profile doesn't exist, allow user to create one
+      if (
+        error.response?.status === 404 ||
+        error.response?.data?.message?.includes("not found")
+      ) {
+        setProfileExists(false);
+        // Initialize empty advertiser object for creation
+        setAdvertiser({
+          advertiserId: "",
+          userId: "",
+          companyName: "",
+          contactPerson: "",
+          phoneNumber: "",
+          businessAddress: "",
+          city: "",
+          industry: "",
+          isVerified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        setIsCreating(true);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!advertiser) return;
 
     try {
-      const response = await advertiserService.updateAdvertiserProfile(
-        advertiser
-      );
-      if (response.status === "success") {
-        setIsEditing(false);
-        alert("Profile updated successfully!");
+      let response;
+      if (isCreating) {
+        // Create new profile
+        response = await advertiserService.createAdvertiserProfile({
+          companyName: advertiser.companyName,
+          contactPerson: advertiser.contactPerson,
+          phoneNumber: advertiser.phoneNumber,
+          businessAddress: advertiser.businessAddress,
+          city: advertiser.city,
+          industry: advertiser.industry,
+        });
+        if (response.status === "success") {
+          toast.success("Profile created successfully!");
+          setIsCreating(false);
+          setProfileExists(true);
+          // Refresh profile data
+          await fetchAdvertiserData();
+        }
+      } else {
+        // Update existing profile
+        response = await advertiserService.updateAdvertiserProfile(advertiser);
+        if (response.status === "success") {
+          setIsEditing(false);
+          toast.success("Profile updated successfully!");
+        }
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile");
+      console.error("Error saving profile:", error);
+      toast.error(
+        isCreating ? "Failed to create profile" : "Failed to update profile"
+      );
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      draft: "bg-gray-100 text-gray-800",
-      active: "bg-green-100 text-green-800",
-      paused: "bg-yellow-100 text-yellow-800",
-      completed: "bg-blue-100 text-blue-800",
-      cancelled: "bg-red-100 text-red-800",
-    };
-    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
   if (loading) {
@@ -107,21 +143,46 @@ export default function AdvertiserProfile() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Advertiser Profile</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={() => navigate("/advertiser/dashboard")}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back
+        </button>
+        <h1 className="text-3xl font-bold">Advertiser Profile</h1>
+      </div>
 
       {/* Company Information */}
       <div className="card mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Company Information</h2>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="btn-primary"
-          >
-            {isEditing ? "Cancel" : "Edit Profile"}
-          </button>
+          {!isCreating && (
+            <button
+              type="button"
+              onClick={() => setIsEditing(!isEditing)}
+              className="btn-primary"
+            >
+              {isEditing ? "Cancel" : "Edit Profile"}
+            </button>
+          )}
         </div>
 
-        <form onSubmit={handleUpdateProfile}>
+        <form onSubmit={handleSaveProfile}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -133,8 +194,9 @@ export default function AdvertiserProfile() {
                 onChange={(e) =>
                   setAdvertiser({ ...advertiser, companyName: e.target.value })
                 }
-                disabled={!isEditing}
+                disabled={!isEditing && !isCreating}
                 className="input-field"
+                required
               />
             </div>
 
@@ -151,7 +213,7 @@ export default function AdvertiserProfile() {
                     contactPerson: e.target.value,
                   })
                 }
-                disabled={!isEditing}
+                disabled={!isEditing && !isCreating}
                 className="input-field"
               />
             </div>
@@ -166,7 +228,7 @@ export default function AdvertiserProfile() {
                 onChange={(e) =>
                   setAdvertiser({ ...advertiser, phoneNumber: e.target.value })
                 }
-                disabled={!isEditing}
+                disabled={!isEditing && !isCreating}
                 className="input-field"
               />
             </div>
@@ -184,7 +246,7 @@ export default function AdvertiserProfile() {
                     businessAddress: e.target.value,
                   })
                 }
-                disabled={!isEditing}
+                disabled={!isEditing && !isCreating}
                 className="input-field"
               />
             </div>
@@ -199,7 +261,7 @@ export default function AdvertiserProfile() {
                 onChange={(e) =>
                   setAdvertiser({ ...advertiser, city: e.target.value })
                 }
-                disabled={!isEditing}
+                disabled={!isEditing && !isCreating}
                 className="input-field"
               />
             </div>
@@ -214,141 +276,37 @@ export default function AdvertiserProfile() {
                 onChange={(e) =>
                   setAdvertiser({ ...advertiser, industry: e.target.value })
                 }
-                disabled={!isEditing}
+                disabled={!isEditing && !isCreating}
                 className="input-field"
               />
             </div>
           </div>
 
-          <div className="mt-6">
-            <span
-              className={`px-3 py-1 rounded-full text-sm ${
-                advertiser.isVerified
-                  ? "bg-green-100 text-green-800"
-                  : "bg-yellow-100 text-yellow-800"
-              }`}
-            >
-              {advertiser.isVerified
-                ? "Verified Business"
-                : "Pending Verification"}
-            </span>
-          </div>
+          {!isCreating && (
+            <div className="mt-6">
+              <span
+                className={`px-3 py-1 rounded-full text-sm ${
+                  advertiser.isVerified
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {advertiser.isVerified
+                  ? "Verified Business"
+                  : "Pending Verification"}
+              </span>
+            </div>
+          )}
 
-          {isEditing && (
+          {(isEditing || isCreating) && (
             <div className="mt-6">
               <button type="submit" className="btn-primary">
-                Save Changes
+                {isCreating ? "Create Profile" : "Save Changes"}
               </button>
             </div>
           )}
         </form>
       </div>
-
-      {/* Campaigns Section */}
-      <div className="card">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">My Campaigns</h2>
-          <button
-            onClick={() => setShowCreateCampaign(true)}
-            className="btn-primary"
-          >
-            + Create Campaign
-          </button>
-        </div>
-
-        {campaigns.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            No campaigns yet. Create your first campaign to start connecting
-            with drivers!
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {campaigns.map((campaign) => (
-              <div
-                key={campaign.campaignId}
-                className="border rounded-lg p-6 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">
-                      {campaign.campaignName}
-                    </h3>
-                    <p className="text-gray-600 mb-3">{campaign.description}</p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
-                      campaign.status
-                    )}`}
-                  >
-                    {campaign.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Start Date:</span>
-                    <p className="font-medium">
-                      {new Date(campaign.startDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">End Date:</span>
-                    <p className="font-medium">
-                      {new Date(campaign.endDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Payment/Day:</span>
-                    <p className="font-medium text-green-600">
-                      ${campaign.paymentPerDay?.toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Drivers Needed:</span>
-                    <p className="font-medium">{campaign.requiredDrivers}</p>
-                  </div>
-                </div>
-
-                {campaign.wrapDesignUrl && (
-                  <div className="mt-4">
-                    <img
-                      src={campaign.wrapDesignUrl}
-                      alt="Wrap Design"
-                      className="w-32 h-20 object-cover rounded"
-                    />
-                  </div>
-                )}
-
-                <div className="mt-4 flex gap-2">
-                  <button className="btn-primary text-sm">View Details</button>
-                  <button className="btn-secondary text-sm">Edit</button>
-                  {campaign.status === "active" && (
-                    <button className="text-yellow-600 hover:bg-yellow-50 px-4 py-2 rounded-lg text-sm">
-                      Pause
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Create Campaign Modal (placeholder) */}
-      {showCreateCampaign && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Create New Campaign</h3>
-            <p className="text-gray-600 mb-4">Campaign form will go here...</p>
-            <button
-              onClick={() => setShowCreateCampaign(false)}
-              className="btn-secondary w-full"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

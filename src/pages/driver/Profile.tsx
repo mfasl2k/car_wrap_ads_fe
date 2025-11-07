@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Driver, Vehicle } from "../../types";
 import { driverService } from "../../services/driverService";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function DriverProfile() {
+  const navigate = useNavigate();
+  const toast = useToast();
   const [driver, setDriver] = useState<Driver | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -89,7 +93,7 @@ export default function DriverProfile() {
           region: driver.region,
         });
         if (response.status === "success") {
-          alert("Profile created successfully!");
+          toast.success("Profile created successfully!");
           setIsCreating(false);
           setProfileExists(true);
           // Refresh profile data
@@ -100,12 +104,12 @@ export default function DriverProfile() {
         response = await driverService.updateDriverProfile(driver);
         if (response.status === "success") {
           setIsEditing(false);
-          alert("Profile updated successfully!");
+          toast.success("Profile updated successfully!");
         }
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert(
+      toast.error(
         isCreating ? "Failed to create profile" : "Failed to update profile"
       );
     }
@@ -148,7 +152,29 @@ export default function DriverProfile() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Driver Profile</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={() => navigate("/driver/dashboard")}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back
+        </button>
+        <h1 className="text-3xl font-bold">Driver Profile</h1>
+      </div>
 
       {/* Profile Information */}
       <div className="card mb-8">

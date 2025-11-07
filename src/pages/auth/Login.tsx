@@ -32,8 +32,13 @@ export default function Login() {
 
         // Redirect to dashboard based on user type
         const userType = response.data.user.userType;
-        window.location.href =
-          userType === "driver" ? "/driver/dashboard" : "/advertiser/dashboard";
+        if (userType === "driver") {
+          window.location.href = "/driver/dashboard";
+        } else if (userType === "advertiser") {
+          window.location.href = "/advertiser/dashboard";
+        } else if (userType === "admin") {
+          window.location.href = "/admin/dashboard";
+        }
       } else {
         setError(response.message || "Login failed");
       }
