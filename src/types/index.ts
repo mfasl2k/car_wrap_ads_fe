@@ -5,7 +5,7 @@ export interface User {
   userId: string;
   email: string;
   passwordHash?: string;
-  userType: 'driver' | 'advertiser';
+  userType: "driver" | "advertiser";
   isActive: boolean;
   isVerified: boolean;
   createdAt: Date | string;
@@ -96,6 +96,67 @@ export interface DriverCampaign {
   createdAt: Date | string;
 }
 
+// Application Types (detailed version with nested data)
+export interface Application {
+  driverCampaignId: string;
+  driverId: string;
+  campaignId: string;
+  status: ApplicationStatus;
+  matchScore: string | number;
+  appliedAt: string;
+  approvedAt?: string | null;
+  rejectionReason?: string | null;
+  campaign: {
+    campaignId: string;
+    campaignName: string;
+    description?: string;
+    status: CampaignStatus;
+    startDate: string;
+    endDate: string;
+    paymentPerDay: string | number;
+    advertiser: {
+      advertiserId: string;
+      companyName: string;
+    };
+  };
+  driver?: {
+    driverId: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string;
+    city?: string;
+    averageRating: string | number;
+    totalCampaignsCompleted?: number;
+    isVerified: boolean;
+    vehicles?: Array<{
+      vehicleId: string;
+      make: string;
+      model: string;
+      year: number;
+      vehicleType?: string;
+      isVerified: boolean;
+    }>;
+    user?: {
+      userId: string;
+      email: string;
+    };
+  };
+}
+
+export interface ApplicationStatistics {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  active?: number;
+  completed?: number;
+}
+
+export interface MyApplicationsResponse {
+  data: Application[];
+  statistics: ApplicationStatistics;
+}
+
 export interface LocationTrack {
   trackId: string;
   driverId: string;
@@ -132,7 +193,7 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  userType: 'driver' | 'advertiser';
+  userType: "driver" | "advertiser";
   // Additional fields based on userType
   firstName?: string;
   lastName?: string;
@@ -144,7 +205,7 @@ export interface AuthResponse {
   user: {
     userId: string;
     email: string;
-    userType: 'driver' | 'advertiser';
+    userType: "driver" | "advertiser";
   };
 }
 
@@ -156,25 +217,48 @@ export interface AuthState {
 }
 
 // API Response Types
-export interface ApiResponse<T = unknown> {
-  status: 'success' | 'error';
+export interface ApiResponse<T = any> {
+  status: "success" | "error";
   message?: string;
   data?: T;
-  errors?: unknown[];
+  errors?: any[];
+}
+
+// Axios error response type
+export interface ApiErrorResponse {
+  response?: {
+    data?: ApiResponse;
+  };
 }
 
 // Campaign & Vehicle Types
-export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
-export type DriverCampaignStatus = 'pending' | 'approved' | 'active' | 'completed' | 'rejected';
-export type VehicleType = 'sedan' | 'suv' | 'van' | 'truck' | 'hatchback';
-export type SizeCategory = 'small' | 'medium' | 'large';
+export type CampaignStatus =
+  | "draft"
+  | "active"
+  | "paused"
+  | "completed"
+  | "cancelled";
+export type DriverCampaignStatus =
+  | "pending"
+  | "approved"
+  | "active"
+  | "completed"
+  | "rejected";
+export type ApplicationStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "active"
+  | "completed";
+export type VehicleType = "sedan" | "suv" | "van" | "truck" | "hatchback";
+export type SizeCategory = "small" | "medium" | "large";
 
 // Utility Types
 export interface PaginationParams {
   page?: number;
   limit?: number;
   sortBy?: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
 }
 
 export interface PaginatedResponse<T> {

@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Advertiser } from "../../types";
 import { advertiserService } from "../../services/advertiserService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 
 export default function AdvertiserProfile() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);

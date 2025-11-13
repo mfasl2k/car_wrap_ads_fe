@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../../services/adminService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 import type { Campaign } from "../../types";
 
 interface CampaignWithDetails extends Campaign {
@@ -16,7 +16,6 @@ interface CampaignWithDetails extends Campaign {
 
 export default function AllCampaigns() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [campaigns, setCampaigns] = useState<CampaignWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -32,6 +31,7 @@ export default function AllCampaigns() {
       const response = await adminService.getAllCampaigns();
 
       if (response.status === "success" && response.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const campaignsData = (response.data as any).campaigns || response.data;
         setCampaigns(Array.isArray(campaignsData) ? campaignsData : []);
       }

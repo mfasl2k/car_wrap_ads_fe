@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../../services/adminService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 import type { Driver } from "../../types";
 
 interface DriverWithDetails extends Driver {
@@ -26,7 +26,6 @@ interface DriverWithDetails extends Driver {
 
 export default function AllDrivers() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [drivers, setDrivers] = useState<DriverWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +40,7 @@ export default function AllDrivers() {
       const response = await adminService.getAllDrivers();
 
       if (response.status === "success" && response.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const driversData = (response.data as any).drivers || response.data;
         setDrivers(Array.isArray(driversData) ? driversData : []);
       }

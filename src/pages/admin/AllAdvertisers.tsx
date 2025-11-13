@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../../services/adminService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 import type { Advertiser } from "../../types";
 
 interface AdvertiserWithDetails extends Advertiser {
@@ -18,10 +18,10 @@ interface AdvertiserWithDetails extends Advertiser {
 
 export default function AllAdvertisers() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [advertisers, setAdvertisers] = useState<AdvertiserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAdvertisers();
@@ -34,6 +34,7 @@ export default function AllAdvertisers() {
 
       if (response.status === "success" && response.data) {
         const advertisersData =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (response.data as any).advertisers || response.data;
         setAdvertisers(Array.isArray(advertisersData) ? advertisersData : []);
       }
@@ -43,6 +44,23 @@ export default function AllAdvertisers() {
       setAdvertisers([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyAdvertiser = async (advertiserId: string) => {
+    try {
+      setVerifying(advertiserId);
+      const response = await adminService.verifyAdvertiser(advertiserId);
+
+      if (response.status === "success") {
+        toast.success("Advertiser verified successfully!");
+        await fetchAdvertisers();
+      }
+    } catch (error) {
+      console.error("Error verifying advertiser:", error);
+      toast.error("Failed to verify advertiser");
+    } finally {
+      setVerifying(null);
     }
   };
 
@@ -167,10 +185,22 @@ export default function AllAdvertisers() {
                         {advertiser.user?.email || "No email"}
                       </p>
                     </div>
-                    {advertiser.isVerified && (
+                    {advertiser.isVerified ? (
                       <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                         ✓ Verified
                       </span>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          handleVerifyAdvertiser(advertiser.advertiserId)
+                        }
+                        disabled={verifying === advertiser.advertiserId}
+                        className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                      >
+                        {verifying === advertiser.advertiserId
+                          ? "Verifying..."
+                          : "✓ Verify"}
+                      </button>
                     )}
                   </div>
 

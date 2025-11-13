@@ -52,4 +52,51 @@ export const driverService = {
     const response = await apiClient.delete(`/vehicles/${vehicleId}`);
     return response.data;
   },
+
+  // Upload vehicle photo
+  uploadVehiclePhoto: async (
+    vehicleId: string,
+    photoFile: File
+  ): Promise<ApiResponse> => {
+    const formData = new FormData();
+    formData.append("photo", photoFile);
+
+    const response = await apiClient.post(
+      `/vehicles/${vehicleId}/upload-photo`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // Get all active campaigns (for drivers to browse)
+  getAvailableCampaigns: async (): Promise<ApiResponse> => {
+    const response = await apiClient.get("/campaigns");
+    return response.data;
+  },
+
+  // Apply to a campaign
+  applyCampaign: async (campaignId: string): Promise<ApiResponse> => {
+    const response = await apiClient.post(`/campaigns/${campaignId}/apply`);
+    return response.data;
+  },
+
+  // Get driver's applications with optional status filter
+  getMyApplications: async (status?: string): Promise<ApiResponse> => {
+    const params = status ? { status } : {};
+    const response = await apiClient.get("/campaigns/applications/my", {
+      params,
+    });
+    return response.data;
+  },
+
+  // Cancel application (only pending applications can be cancelled)
+  cancelApplication: async (campaignId: string): Promise<ApiResponse> => {
+    const response = await apiClient.delete(`/campaigns/${campaignId}/apply`);
+    return response.data;
+  },
 };

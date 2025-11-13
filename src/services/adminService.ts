@@ -47,4 +47,20 @@ export const adminService = {
     );
     return response.data;
   },
+
+  // Verify driver (admin only)
+  verifyDriver: async (driverId: string) => {
+    const response = await api.patch<ApiResponse>(
+      `/drivers/${driverId}/verify`
+    );
+    return response.data;
+  },
+
+  // Verify advertiser (admin only)
+  verifyAdvertiser: async (advertiserId: string) => {
+    const response = await api.patch<ApiResponse>(
+      `/advertisers/${advertiserId}/verify`
+    );
+    return response.data;
+  },
 };

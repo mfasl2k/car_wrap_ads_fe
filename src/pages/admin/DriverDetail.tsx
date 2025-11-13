@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { adminService } from "../../services/adminService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 import type { Driver, Vehicle } from "../../types";
 
 interface DriverDetails extends Driver {
@@ -21,10 +21,10 @@ interface DriverDetails extends Driver {
 export default function DriverDetail() {
   const { driverId } = useParams<{ driverId: string }>();
   const navigate = useNavigate();
-  const toast = useToast();
   const [driver, setDriver] = useState<DriverDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [verifyingDriver, setVerifyingDriver] = useState(false);
 
   useEffect(() => {
     if (driverId) {
@@ -38,6 +38,7 @@ export default function DriverDetail() {
       const response = await adminService.getDriverById(driverId!);
 
       if (response.status === "success" && response.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const driverData = (response.data as any).driver || response.data;
         setDriver(driverData);
       }
@@ -64,6 +65,25 @@ export default function DriverDetail() {
       toast.error("Failed to verify vehicle");
     } finally {
       setVerifying(null);
+    }
+  };
+
+  const handleVerifyDriver = async () => {
+    if (!driverId) return;
+
+    try {
+      setVerifyingDriver(true);
+      const response = await adminService.verifyDriver(driverId);
+
+      if (response.status === "success") {
+        toast.success("Driver verified successfully!");
+        await fetchDriverDetails();
+      }
+    } catch (error) {
+      console.error("Error verifying driver:", error);
+      toast.error("Failed to verify driver");
+    } finally {
+      setVerifyingDriver(false);
     }
   };
 
@@ -137,9 +157,13 @@ export default function DriverDetail() {
                 ✓ Verified Driver
               </span>
             ) : (
-              <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
-                Unverified
-              </span>
+              <button
+                onClick={handleVerifyDriver}
+                disabled={verifyingDriver}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {verifyingDriver ? "Verifying..." : "✓ Verify Driver"}
+              </button>
             )}
             {driver.user?.isActive && (
               <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">

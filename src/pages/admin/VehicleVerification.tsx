@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../../services/adminService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 import type { Vehicle } from "../../types";
 
 interface VehicleWithDriver extends Vehicle {
@@ -18,7 +18,6 @@ interface VehicleWithDriver extends Vehicle {
 
 export default function VehicleVerification() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [vehicles, setVehicles] = useState<VehicleWithDriver[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "verified">("all");
@@ -34,6 +33,7 @@ export default function VehicleVerification() {
       const response = await adminService.getAllVehicles();
 
       if (response.status === "success" && response.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const vehiclesData = (response.data as any).vehicles || response.data;
         setVehicles(Array.isArray(vehiclesData) ? vehiclesData : []);
       }

@@ -118,19 +118,35 @@ export default function DriverDashboard() {
             {/* Quick Actions */}
             <div className="card">
               <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button
+                  onClick={() => navigate("/driver/profile")}
+                  className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left"
+                >
                   <div className="text-2xl mb-2">🚙</div>
                   <div className="font-semibold">Manage Vehicles</div>
                   <div className="text-sm text-gray-600">
                     Add or update your vehicles
                   </div>
                 </button>
-                <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left">
-                  <div className="text-2xl mb-2">📊</div>
-                  <div className="font-semibold">View Campaigns</div>
+                <button
+                  onClick={() => navigate("/driver/campaigns")}
+                  className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left"
+                >
+                  <div className="text-2xl mb-2">🎯</div>
+                  <div className="font-semibold">Browse Campaigns</div>
                   <div className="text-sm text-gray-600">
-                    See available campaigns
+                    Find and apply to campaigns
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigate("/driver/applications")}
+                  className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all text-left"
+                >
+                  <div className="text-2xl mb-2">📋</div>
+                  <div className="font-semibold">My Applications</div>
+                  <div className="text-sm text-gray-600">
+                    Track your application status
                   </div>
                 </button>
               </div>

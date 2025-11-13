@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { authService } from "../../services/authService";
 import type { RegisterData } from "../../types";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const [formData, setFormData] = useState<RegisterData>({
@@ -44,13 +45,16 @@ export default function Register() {
         // This ensures proper authentication flow
 
         setSuccess(true);
+        toast.success("Registration successful! Redirecting to login...");
 
         // Redirect to login page after 2 seconds
         setTimeout(() => {
           window.location.href = "/login";
         }, 2000);
       } else {
-        setError(response.message || "Registration failed");
+        const errorMsg = response.message || "Registration failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -59,6 +63,7 @@ export default function Register() {
         err.message ||
         "Registration failed. Please try again.";
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

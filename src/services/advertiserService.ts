@@ -30,6 +30,14 @@ export const advertiserService = {
     return response.data;
   },
 
+  // Get single campaign details
+  getCampaignById: async (
+    campaignId: string
+  ): Promise<ApiResponse<Campaign>> => {
+    const response = await apiClient.get(`/campaigns/${campaignId}`);
+    return response.data;
+  },
+
   // Create campaign
   createCampaign: async (
     campaignData: Partial<Campaign>
@@ -64,6 +72,63 @@ export const advertiserService = {
   // Delete campaign
   deleteCampaign: async (campaignId: string): Promise<ApiResponse> => {
     const response = await apiClient.delete(`/campaigns/${campaignId}`);
+    return response.data;
+  },
+
+  // Upload campaign wrap design
+  uploadCampaignDesign: async (
+    campaignId: string,
+    designFile: File
+  ): Promise<ApiResponse> => {
+    const formData = new FormData();
+    formData.append("design", designFile);
+
+    const response = await apiClient.post(
+      `/campaigns/${campaignId}/upload-design`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // Get applications for a specific campaign
+  getCampaignApplications: async (
+    campaignId: string,
+    status?: string
+  ): Promise<ApiResponse> => {
+    const params = status ? { status } : {};
+    const response = await apiClient.get(
+      `/campaigns/${campaignId}/applications`,
+      { params }
+    );
+    return response.data;
+  },
+
+  // Approve a driver's application
+  approveApplication: async (
+    campaignId: string,
+    driverId: string
+  ): Promise<ApiResponse> => {
+    const response = await apiClient.patch(
+      `/campaigns/${campaignId}/applications/${driverId}/approve`
+    );
+    return response.data;
+  },
+
+  // Reject a driver's application
+  rejectApplication: async (
+    campaignId: string,
+    driverId: string,
+    reason?: string
+  ): Promise<ApiResponse> => {
+    const response = await apiClient.patch(
+      `/campaigns/${campaignId}/applications/${driverId}/reject`,
+      reason ? { reason } : {}
+    );
     return response.data;
   },
 };

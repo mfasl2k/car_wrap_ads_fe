@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Driver, Vehicle } from "../../types";
 import { driverService } from "../../services/driverService";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 
 export default function DriverProfile() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [driver, setDriver] = useState<Driver | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -242,6 +241,25 @@ export default function DriverProfile() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                value={
+                  driver.dateOfBirth
+                    ? new Date(driver.dateOfBirth).toISOString().split("T")[0]
+                    : ""
+                }
+                onChange={(e) =>
+                  setDriver({ ...driver, dateOfBirth: e.target.value })
+                }
+                disabled={!isEditing && !isCreating}
+                className="input-field"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Driver's License Number
               </label>
               <input
@@ -348,14 +366,36 @@ export default function DriverProfile() {
               {vehicles.map((vehicle) => (
                 <div
                   key={vehicle.vehicleId}
-                  className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                  className="border rounded-lg p-4 hover:shadow-lg transition-shadow relative"
                 >
-                  {vehicle.photoUrl && (
+                  {/* Verification Badge */}
+                  <div className="absolute top-2 right-2 z-10">
+                    {vehicle.isVerified ? (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        ✓ Verified
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                        ⏳ Pending
+                      </span>
+                    )}
+                  </div>
+
+                  {vehicle.photoUrl ? (
                     <img
                       src={vehicle.photoUrl}
                       alt={`${vehicle.make} ${vehicle.model}`}
                       className="w-full h-48 object-cover rounded-lg mb-4"
                     />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">🚗</div>
+                        <p className="text-sm text-gray-500">
+                          No photo uploaded
+                        </p>
+                      </div>
+                    </div>
                   )}
                   <h3 className="text-lg font-semibold mb-2">
                     {vehicle.year} {vehicle.make} {vehicle.model}
@@ -393,21 +433,402 @@ export default function DriverProfile() {
         </div>
       )}
 
-      {/* Add Vehicle Modal (placeholder) */}
+      {/* Add Vehicle Modal */}
       {showAddVehicle && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Add New Vehicle</h3>
-            <p className="text-gray-600 mb-4">Vehicle form will go here...</p>
-            <button
-              onClick={() => setShowAddVehicle(false)}
-              className="btn-secondary w-full"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <AddVehicleModal
+          onClose={() => setShowAddVehicle(false)}
+          onSuccess={() => {
+            setShowAddVehicle(false);
+            fetchDriverData();
+          }}
+        />
       )}
+    </div>
+  );
+}
+
+// Add Vehicle Modal Component
+function AddVehicleModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [step, setStep] = useState<"info" | "photo">("info");
+  const [loading, setLoading] = useState(false);
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    make: "",
+    model: "",
+    year: new Date().getFullYear(),
+    color: "",
+    registrationNumber: "",
+    vehicleType: "sedan" as "sedan" | "suv" | "van" | "truck" | "hatchback",
+    sizeCategory: "medium" as "small" | "medium" | "large",
+  });
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.make || !formData.model || !formData.registrationNumber) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await driverService.addVehicle(formData);
+
+      if (response.status === "success" && response.data) {
+        const vehicleData = (response.data as any).vehicle || response.data;
+        setVehicleId(vehicleData.vehicleId);
+        toast.success("Vehicle information saved!");
+        setStep("photo");
+      }
+    } catch (error) {
+      console.error("Error adding vehicle:", error);
+      toast.error("Failed to add vehicle");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!photoFile || !vehicleId) {
+      toast.error("Please select a photo");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await driverService.uploadVehiclePhoto(
+        vehicleId,
+        photoFile
+      );
+
+      if (response.status === "success") {
+        toast.success("Vehicle photo uploaded successfully!");
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast.error("Failed to upload photo");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipPhoto = () => {
+    toast.success("You can upload a photo later. Vehicle added successfully!");
+    onSuccess();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {step === "info" ? (
+          <>
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold">Add New Vehicle</h3>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 flex-shrink-0"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSubmitInfo}
+              className="space-y-3 sm:space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {/* Make */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Make <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.make}
+                    onChange={(e) =>
+                      setFormData({ ...formData, make: e.target.value })
+                    }
+                    className="input-field text-sm sm:text-base"
+                    placeholder="e.g., Toyota"
+                    required
+                  />
+                </div>
+
+                {/* Model */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Model <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.model}
+                    onChange={(e) =>
+                      setFormData({ ...formData, model: e.target.value })
+                    }
+                    className="input-field text-sm sm:text-base"
+                    placeholder="e.g., Camry"
+                    required
+                  />
+                </div>
+
+                {/* Year */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Year <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.year}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        year: parseInt(e.target.value),
+                      })
+                    }
+                    className="input-field text-sm sm:text-base"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    required
+                  />
+                </div>
+
+                {/* Color */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Color <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.color}
+                    onChange={(e) =>
+                      setFormData({ ...formData, color: e.target.value })
+                    }
+                    className="input-field text-sm sm:text-base"
+                    placeholder="e.g., Silver"
+                    required
+                  />
+                </div>
+
+                {/* Registration Number */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Registration Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.registrationNumber}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        registrationNumber: e.target.value.toUpperCase(),
+                      })
+                    }
+                    className="input-field text-sm sm:text-base"
+                    placeholder="e.g., ABC123"
+                    required
+                  />
+                </div>
+
+                {/* Vehicle Type */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Vehicle Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.vehicleType}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        vehicleType: e.target.value as any,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    style={{
+                      boxSizing: "border-box",
+                      maxWidth: "100%",
+                    }}
+                    required
+                  >
+                    <option value="">Select type</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="van">Van</option>
+                    <option value="truck">Truck</option>
+                    <option value="hatchback">Hatchback</option>
+                  </select>
+                </div>
+
+                {/* Size Category */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    Size Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.sizeCategory}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        sizeCategory: e.target.value as any,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    style={{
+                      boxSizing: "border-box",
+                      maxWidth: "100%",
+                    }}
+                    required
+                  >
+                    <option value="">Select size</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="btn-secondary flex-1 text-sm sm:text-base py-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary flex-1 text-sm sm:text-base py-2"
+                >
+                  {loading ? "Saving..." : "Next: Upload Photo"}
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold">
+                Upload Vehicle Photo
+              </h3>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 flex-shrink-0"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3 sm:space-y-4">
+              <p className="text-sm sm:text-base text-gray-600">
+                Upload a clear photo of your vehicle. This will help advertisers
+                verify your vehicle.
+              </p>
+
+              {/* Photo Upload Area */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-8 text-center hover:border-primary-500 transition-colors">
+                {photoPreview ? (
+                  <div className="space-y-3 sm:space-y-4">
+                    <img
+                      src={photoPreview}
+                      alt="Vehicle preview"
+                      className="max-h-48 sm:max-h-64 mx-auto rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoFile(null);
+                        setPhotoPreview(null);
+                      }}
+                      className="text-xs sm:text-sm text-red-600 hover:text-red-700"
+                    >
+                      Remove Photo
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <div className="text-4xl sm:text-6xl mb-2 sm:mb-4">📸</div>
+                    <div className="text-sm sm:text-base text-gray-600 mb-1 sm:mb-2">
+                      Click to upload vehicle photo
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      PNG, JPG up to 10MB
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handleSkipPhoto}
+                  className="btn-secondary flex-1 text-sm sm:text-base py-2"
+                >
+                  Skip for Now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUploadPhoto}
+                  disabled={!photoFile || loading}
+                  className="btn-primary flex-1 disabled:opacity-50 text-sm sm:text-base py-2"
+                >
+                  {loading ? "Uploading..." : "Upload & Finish"}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

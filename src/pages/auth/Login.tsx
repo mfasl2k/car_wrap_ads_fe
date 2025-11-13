@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { authService } from "../../services/authService";
 import type { LoginCredentials } from "../../types";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [formData, setFormData] = useState<LoginCredentials>({
@@ -30,6 +31,8 @@ export default function Login() {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
+        toast.success("Login successful! Redirecting...");
+
         // Redirect to dashboard based on user type
         const userType = response.data.user.userType;
         if (userType === "driver") {
@@ -40,7 +43,9 @@ export default function Login() {
           window.location.href = "/admin/dashboard";
         }
       } else {
-        setError(response.message || "Login failed");
+        const errorMsg = response.message || "Login failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err: any) {
       console.error("Login error:", err);
@@ -49,6 +54,7 @@ export default function Login() {
         err.message ||
         "Login failed. Please try again.";
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

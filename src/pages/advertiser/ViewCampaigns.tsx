@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { advertiserService } from "../../services/advertiserService";
 import type { Campaign } from "../../types";
-import { useToast } from "../../contexts/ToastContext";
+import toast from "react-hot-toast";
 
 export default function ViewCampaigns() {
   const navigate = useNavigate();
-  const toast = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -229,6 +228,16 @@ export default function ViewCampaigns() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 pt-4 border-t">
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/advertiser/campaigns/${campaign.campaignId}/applications`
+                      )
+                    }
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    📋 View Applications
+                  </button>
                   {campaign.status === "draft" && (
                     <button
                       onClick={() =>
@@ -269,7 +278,12 @@ export default function ViewCampaigns() {
                       </button>
                     </>
                   )}
-                  <button className="btn-secondary text-sm">
+                  <button
+                    onClick={() =>
+                      navigate(`/advertiser/campaigns/${campaign.campaignId}`)
+                    }
+                    className="btn-secondary text-sm"
+                  >
                     View Details
                   </button>
                 </div>
